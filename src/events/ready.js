@@ -1,6 +1,7 @@
 'use strict';
 const { Events } = require('discord.js');
 const { sweep } = require('../protection/raid');
+const { maybeWarnHealth } = require('../protection/hierarchy');
 
 module.exports = {
   name: Events.ClientReady,
@@ -23,5 +24,10 @@ module.exports = {
     };
     await tick();
     setInterval(tick, 30_000).unref();
+
+    // Kiểm tra thứ bậc role và quyền ở mọi server, lần lượt để không dồn request (chỉ báo khi có lỗi)
+    for (const guild of client.guilds.cache.values()) {
+      await maybeWarnHealth(guild).catch((err) => console.warn(`Health check ${guild.name} lỗi:`, err.message));
+    }
   },
 };

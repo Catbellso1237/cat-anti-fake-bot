@@ -53,6 +53,13 @@ const data = new SlashCommandBuilder()
       .setDescription('Đặt webhook nhận cảnh báo raid (để trống để xóa)')
       .addStringOption((o) => o.setName('url').setDescription('URL webhook Discord')),
   )
+  .addSubcommand((s) =>
+    s
+      .setName('escalation')
+      .setDescription('Chống cấp quyền hoặc role nguy hiểm trái phép (kiểu Wick)')
+      .addBooleanOption((o) => o.setName('enabled').setDescription('Bật hoặc tắt'))
+      .addBooleanOption((o) => o.setName('revert').setDescription('Tự hoàn tác ở chế độ act')),
+  )
   .addSubcommand((s) => s.setName('webhook_test').setDescription('Gửi thử một cảnh báo qua webhook'))
   .addSubcommand((s) =>
     s
@@ -87,6 +94,7 @@ async function execute(interaction) {
             name: 'Raid',
             value: `${cfg.raid.maxJoins} người / ${cfg.raid.windowMs / 1000}s · auto lockdown ${yn(cfg.raid.autoLockdown)} (${Math.round(cfg.raid.lockdownMs / 60000)} phút) · xóa tin raider ${yn(cfg.raid.purgeRaiders)} · tăng xác minh ${yn(cfg.raid.raiseVerification)}`,
           },
+          { name: 'Chống leo thang quyền', value: `${yn(cfg.escalation.enabled)}${cfg.escalation.revert ? ', tự hoàn tác' : ''}`, inline: true },
           { name: 'Tuổi tài khoản tối thiểu', value: `${Math.round(cfg.minAccountAgeMs / 86_400_000)} ngày`, inline: true },
           { name: 'Tin cậy', value: `${cfg.trustedUserIds.length} người, ${cfg.trustedBotIds.length} bot`, inline: true },
         ],
@@ -112,6 +120,13 @@ async function execute(interaction) {
       if (o.getBoolean('raise_verification') != null) cfg.raid.raiseVerification = o.getBoolean('raise_verification');
       await saveConfig();
       return reply(`Đã lưu: ${cfg.raid.maxJoins} người / ${cfg.raid.windowMs / 1000}s, auto lockdown ${yn(cfg.raid.autoLockdown)}, mở khóa sau ${Math.round(cfg.raid.lockdownMs / 60000)} phút.`);
+    }
+    case 'escalation': {
+      const o = interaction.options;
+      if (o.getBoolean('enabled') != null) cfg.escalation.enabled = o.getBoolean('enabled');
+      if (o.getBoolean('revert') != null) cfg.escalation.revert = o.getBoolean('revert');
+      await saveConfig();
+      return reply(`Chống leo thang quyền: ${yn(cfg.escalation.enabled)}, tự hoàn tác (chế độ act): ${yn(cfg.escalation.revert)}. Chỉ owner và người trong /security trust được phép cấp quyền nguy hiểm.`);
     }
     case 'accountage': {
       cfg.minAccountAgeMs = interaction.options.getInteger('days', true) * 86_400_000;

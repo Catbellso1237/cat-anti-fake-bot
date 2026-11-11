@@ -58,3 +58,71 @@ test('config: getConfig luôn trả về cùng một object cho một server', (
   assert.equal(getConfig('same-ref-guild'), a);
   assert.equal(getConfig('same-ref-guild').mode, 'act');
 });
+
+// ---- hierarchyCheck (kiểm tra thứ bậc role kiểu Wick) ----
+const { analyze, DANGEROUS, REQUIRED } = require('../src/protection/hierarchyCheck');
+
+const ALL_PERMS = REQUIRED.map(([p]) => p);
+const role = (o) => ({ id: o.name, managed: false, everyone: false, dangerous: [], memberCount: 0, ...o });
+const base = (over = {}) => ({
+  botTopPosition: 10,
+  botHas: ALL_PERMS,
+  roles: [role({ name: '@everyone', position: 0, everyone: true }), role({ name: 'Bot', position: 10, managed: true })],
+  verifiedRole: null,
+  verifiedRoleMissing: false,
+  logChannel: 'ok',
+  webhook: 'ok',
+  mode: 'act',
+  ...over,
+});
+
+test('hierarchy: bot ở trên cùng và đủ quyền thì không có lỗi', () => {
+  const r = analyze(base());
+  assert.equal(r.ok, true);
+  assert.equal(r.botIsTop, true);
+  assert.deepEqual(r.issues, []);
+});
+
+test('hierarchy: role có quyền Administrator nằm trên bot là lỗi nghiêm trọng', () => {
+  const r = analyze(base({ roles: [...base().roles, role({ name: 'Mod', position: 12, dangerous: ['Administrator'], memberCount: 3 })] }));
+  assert.equal(r.ok, false);
+  assert.equal(r.botIsTop, false);
+  assert.ok(r.issues.some((x) => x.level === 'error' && x.text.includes('Mod') && x.text.includes('3 thành viên')));
+});
+
+test('hierarchy: role thường nằm trên bot chỉ là cảnh báo', () => {
+  const r = analyze(base({ roles: [...base().roles, role({ name: 'VIP', position: 12 })] }));
+  assert.equal(r.ok, true);
+  assert.equal(r.botIsTop, false);
+  assert.ok(r.issues.some((x) => x.level === 'warn'));
+});
+
+test('hierarchy: bot khác có quyền cao hơn chỉ là cảnh báo', () => {
+  const r = analyze(base({ roles: [...base().roles, role({ name: 'OtherBot', position: 15, managed: true, dangerous: ['Administrator'] })] }));
+  assert.equal(r.ok, true);
+  assert.ok(r.issues.some((x) => x.level === 'warn' && x.text.includes('OtherBot')));
+});
+
+test('hierarchy: thiếu quyền cần thiết và @everyone có quyền nguy hiểm', () => {
+  const r = analyze(base({
+    botHas: ALL_PERMS.filter((p) => p !== 'ModerateMembers'),
+    roles: [role({ name: '@everyone', position: 0, everyone: true, dangerous: ['ManageRoles'] }), role({ name: 'Bot', position: 10, managed: true })],
+  }));
+  assert.equal(r.ok, false);
+  assert.ok(r.issues.some((x) => x.text.includes('ModerateMembers')));
+  assert.ok(r.issues.some((x) => x.text.includes('@everyone')));
+});
+
+test('hierarchy: bot chưa có role riêng, role xác minh cao hơn bot, kênh log lỗi', () => {
+  const r = analyze(base({ botTopPosition: 0, verifiedRole: { name: 'Verified', position: 3 }, logChannel: 'noaccess' }));
+  assert.equal(r.ok, false);
+  const text = r.issues.map((x) => x.text).join('\n');
+  assert.ok(text.includes('chưa có role riêng'));
+  assert.ok(text.includes('Verified'));
+  assert.ok(text.includes('mod-log'));
+});
+
+test('hierarchy: danh sách quyền nguy hiểm gồm Administrator và ManageRoles', () => {
+  assert.ok(DANGEROUS.includes('Administrator'));
+  assert.ok(DANGEROUS.includes('ManageRoles'));
+});
