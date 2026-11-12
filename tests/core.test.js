@@ -126,3 +126,22 @@ test('hierarchy: danh sách quyền nguy hiểm gồm Administrator và ManageRo
   assert.ok(DANGEROUS.includes('Administrator'));
   assert.ok(DANGEROUS.includes('ManageRoles'));
 });
+
+// ---- panel presets ----
+const { PRESETS, presetOf } = require('../src/panel/presets');
+
+test('panel: nhận diện đúng mức nhạy từ cấu hình raid', () => {
+  assert.equal(presetOf({ maxJoins: 8, windowMs: 10_000 }), 'mid');
+  assert.equal(presetOf({ maxJoins: 3, windowMs: 8_000 }), 'max');
+  assert.equal(presetOf({ maxJoins: 7, windowMs: 10_000 }), null); // chỉnh tay
+});
+
+test('panel: mặc định của config khớp mức Vừa, và mức càng cao càng nhạy', () => {
+  assert.equal(presetOf(DEFAULTS.raid), 'mid');
+  const { low, mid, high, max } = PRESETS;
+  assert.ok(low.maxJoins > mid.maxJoins && mid.maxJoins > high.maxJoins && high.maxJoins > max.maxJoins);
+});
+
+test('panel: giới hạn của Discord cho select menu (nhãn/mô tả tối đa 100 ký tự)', () => {
+  for (const p of Object.values(PRESETS)) assert.ok(p.label.length <= 100);
+});

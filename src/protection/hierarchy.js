@@ -3,7 +3,7 @@
 // khi vào server mới và khi thứ tự role thay đổi.
 const { getConfig } = require('../config');
 const { sendModLog } = require('../utils/log');
-const { COLORS } = require('../utils/embed');
+const { COLORS, safeEmbed } = require('../utils/embed');
 const { isValidWebhookUrl } = require('../utils/webhook');
 const { DANGEROUS, REQUIRED, analyze } = require('./hierarchyCheck');
 
@@ -51,6 +51,21 @@ async function snapshot(guild, cfg) {
 const ICON = { error: '❌', warn: '⚠️', info: 'ℹ️' };
 const formatIssues = (issues) => issues.map((x) => `${ICON[x.level]} ${x.text}`).join('\n');
 
+function healthEmbed(r) {
+  const errors = r.issues.filter((x) => x.level === 'error').length;
+  const warns = r.issues.filter((x) => x.level === 'warn').length;
+  return safeEmbed({
+    title: r.ok ? '✅ Kiểm tra: không có lỗi nghiêm trọng' : '❌ Kiểm tra: có lỗi cần sửa',
+    description: r.issues.length ? formatIssues(r.issues) : 'Mọi thứ đều ổn.',
+    color: r.ok ? (warns ? COLORS.warn : COLORS.ok) : COLORS.danger,
+    fields: [
+      { name: 'Role bot ở trên cùng', value: r.botIsTop ? 'có' : `không (${r.aboveCount} role nằm trên)`, inline: true },
+      { name: 'Lỗi / cảnh báo', value: `${errors} / ${warns}`, inline: true },
+    ],
+    footer: 'Số thành viên mỗi role tính theo cache nên có thể thiếu ở server lớn.',
+  });
+}
+
 async function checkGuild(guild) {
   const cfg = getConfig(guild.id);
   return analyze(await snapshot(guild, cfg));
@@ -87,4 +102,4 @@ function scheduleHealthCheck(guild, delayMs = 30_000) {
   pending.set(guild.id, t);
 }
 
-module.exports = { checkGuild, maybeWarnHealth, scheduleHealthCheck, formatIssues };
+module.exports = { checkGuild, maybeWarnHealth, scheduleHealthCheck, formatIssues, healthEmbed };

@@ -13,6 +13,7 @@ Bot Discord (discord.js v14, Node 20+, CommonJS) bảo vệ server: chống raid
 - `src/commands/`: mỗi file một slash command (`data`, `execute`, tùy chọn `cooldownSeconds`)
 - `src/events/`: mỗi file một event, hoặc mảng event; được đăng ký đúng một lần trong `src/index.js`
 - `src/protection/`: logic phát hiện và phản ứng (raid, antiSpam, antiBot, antiNuke, exempt, hierarchy). `hierarchyCheck.js` là logic thuần, có test; `hierarchy.js` lấy dữ liệu từ guild
+- `src/panel/`: bảng điều khiển (`controlPanel.js` nút/select với customId tiền tố `panel:`, `presets.js` logic thuần có test)
 - `src/utils/`: embed, thời gian, cooldown, webhook, mod-log
 - `src/config.js`: cấu hình theo từng server, lưu `data/config.json`
 

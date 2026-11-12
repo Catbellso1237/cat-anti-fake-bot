@@ -66,7 +66,7 @@ async function purgeUsers(guild, userIds) {
 }
 
 // ---------- Lockdown ----------
-async function lockdown(guild, cfg, { durationMs, reason = 'Cat Anti Fake Bot: lockdown' } = {}) {
+async function lockdownInner(guild, cfg, { durationMs, reason = 'Cat Anti Fake Bot: lockdown' } = {}) {
   const everyone = guild.roles.everyone;
   const snapshot = cfg.lockdown?.snapshot ?? {};
   let locked = 0;
@@ -98,7 +98,7 @@ async function lockdown(guild, cfg, { durationMs, reason = 'Cat Anti Fake Bot: l
   return locked;
 }
 
-async function unlock(guild, cfg, reason = 'Cat Anti Fake Bot: mở khóa') {
+async function unlockInner(guild, cfg, reason = 'Cat Anti Fake Bot: mở khóa') {
   const ld = cfg.lockdown;
   if (!ld) return 0;
   const everyone = guild.roles.everyone;
@@ -118,6 +118,22 @@ async function unlock(guild, cfg, reason = 'Cat Anti Fake Bot: mở khóa') {
   await saveConfig();
   return restored;
 }
+
+// Mỗi server chỉ cho một thao tác khóa/mở khóa chạy tại một thời điểm.
+// Nếu hai thao tác chạy chồng nhau, lần sau sẽ chụp nhầm các kênh vừa bị khóa là "vốn đã cấm" và khôi phục sai quyền.
+const busyGuilds = new Set();
+async function exclusive(guild, fn) {
+  if (busyGuilds.has(guild.id)) return 0;
+  busyGuilds.add(guild.id);
+  try {
+    return await fn();
+  } finally {
+    busyGuilds.delete(guild.id);
+  }
+}
+const lockdown = (guild, cfg, opts) => exclusive(guild, () => lockdownInner(guild, cfg, opts));
+const unlock = (guild, cfg, reason) => exclusive(guild, () => unlockInner(guild, cfg, reason));
+const isBusy = (guildId) => busyGuilds.has(guildId);
 
 // ---------- Kích hoạt raid ----------
 async function startRaid(guild, cfg, { reason, raiderIds: initial = [] } = {}) {
@@ -175,5 +191,5 @@ async function sweep(client) {
 
 module.exports = {
   recordJoin, isRaidActive, isRaider, getRaiders, markRaider, trackMessage, purgeUsers,
-  lockdown, unlock, startRaid, sweep,
+  lockdown, unlock, isBusy, startRaid, sweep,
 };

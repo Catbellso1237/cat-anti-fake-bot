@@ -38,7 +38,8 @@ Bot Discord bảo vệ server của bạn: chống raid, bot giả, spam và ph�
 | `/purge messages` | Manage Messages | Xóa tối đa 100 tin gần nhất (lọc theo người) |
 | `/purge raiders` | Manage Messages | Xóa tin của những người vào lúc raid |
 | `/purge reset_channel` | Manage Messages + Manage Channels | Nhân bản kênh rồi xóa kênh cũ (không hoàn tác) |
-| `/panel` | Manage Server | Đăng nút xác minh |
+| `/panel control` | Manage Server | Mở bảng điều khiển bảo mật (nút và menu, chỉ bạn thấy) |
+| `/panel verify` | Manage Server | Đăng nút xác minh vào kênh hiện tại |
 | `/ping` | Mọi người | Kiểm tra bot |
 
 ## Cài đặt
@@ -55,7 +56,7 @@ npm run deploy           # đăng ký slash command
 npm start
 ```
 
-5. Trong server: kéo **role của bot lên trên cùng** (chỉ dưới role của chủ server nếu có; sai thứ tự role gây lỗi `Missing Permissions`), rồi chạy `/health` để bot tự kiểm tra, sau đó `/setup`, `/security webhook`, `/panel`.
+5. Trong server: kéo **role của bot lên trên cùng** (chỉ dưới role của chủ server nếu có; sai thứ tự role gây lỗi `Missing Permissions`), rồi chạy `/health` để bot tự kiểm tra, sau đó `/setup`, `/security webhook`, `/panel verify` (nếu dùng xác minh) và `/panel control` để điều khiển.
 6. Chạy `/security mode log` vài ngày, xem mod-log có chặn nhầm không, rồi `/security mode act`.
 
 ## Cách bot phản ứng khi raid (chế độ act)
@@ -80,6 +81,24 @@ Dữ liệu cấu hình nằm ở `data/config.json` (không commit). Sao lưu f
 - `npm run check`: kiểm tra cú pháp và nạp thử module
 - `npm test`: test các hàm thuần (webhook, anti-spam, config)
 - Cấu hình Claude Code cho project nằm trong `CLAUDE.md` và `.claude/`; lỗi đã gặp ghi ở `ERRORS.md`.
+
+## Bảng điều khiển (`/panel control`)
+
+Một tin nhắn riêng tư với các nút, bấm là có tác dụng ngay và tự cập nhật số liệu:
+
+| Điều khiển | Tác dụng |
+|---|---|
+| Chế độ: log/act | Chuyển giữa chỉ ghi log và xử lý thật |
+| Khóa chat / Mở khóa chat | Lockdown thủ công, mở khóa khôi phục đúng quyền cũ |
+| Tự khóa | Bật/tắt tự lockdown khi phát hiện raid |
+| Chống leo thang | Bật/tắt chống cấp quyền nguy hiểm trái phép |
+| Menu mức nhạy | Thấp (12 người/10s), Vừa (8/10s), Cao (5/10s), Rất cao (3/8s) |
+| Kiểm tra quyền | Chạy `/health` và hiện kết quả |
+| Thử webhook | Gửi một cảnh báo thử |
+| Xóa tin raider | Xóa tin đã ghi nhận của nhóm raid |
+| Làm mới | Cập nhật số liệu |
+
+Mỗi lần bấm bot kiểm tra lại quyền **Manage Server** của người bấm (và Manage Messages với nút xóa tin). Nếu bot khởi động lại, bảng cũ vẫn dùng được; chỉ cần bấm "Làm mới". Cấu hình chi tiết hơn (webhook, kênh log, tin cậy) vẫn dùng `/security`.
 
 ## Thứ bậc role và chống leo thang quyền
 
