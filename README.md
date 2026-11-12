@@ -82,7 +82,6 @@ Dữ liệu cấu hình nằm ở `data/config.json` (không commit). Sao lưu f
 
 - `npm run check`: kiểm tra cú pháp và nạp thử module
 - `npm test`: test các hàm thuần (webhook, anti-spam, config)
-- Cấu hình Claude Code cho project nằm trong `CLAUDE.md` và `.claude/`; lỗi đã gặp ghi ở `ERRORS.md`.
 
 ## Bảng điều khiển (`/panel control`)
 
