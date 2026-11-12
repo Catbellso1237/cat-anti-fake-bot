@@ -23,6 +23,8 @@ const DEFAULTS = Object.freeze({
   spam: { max: 6, windowMs: 5_000, maxDupes: 3, timeoutMs: 10 * 60_000 },
   nuke: { maxActions: 3, windowMs: 10_000 },
   escalation: { enabled: true, revert: true }, // chống cấp quyền/role nguy hiểm trái phép
+  botApproval: { enabled: true, timeoutMs: 10 * 60_000 }, // bot mới phải được chủ server duyệt
+  pendingBots: {}, // yêu cầu duyệt bot đang chờ: { [botId]: {...} }
   trustedUserIds: [],
   trustedBotIds: [],
   exemptRoleIds: [],

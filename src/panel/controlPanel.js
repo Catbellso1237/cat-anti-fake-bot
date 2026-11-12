@@ -42,6 +42,7 @@ function render(guild) {
       { name: 'Tự khóa khi raid', value: onOff(cfg.raid.autoLockdown), inline: true },
       { name: 'Xóa tin raider', value: onOff(cfg.raid.purgeRaiders), inline: true },
       { name: 'Chống leo thang quyền', value: onOff(cfg.escalation.enabled), inline: true },
+      { name: 'Duyệt bot mới', value: `${onOff(cfg.botApproval.enabled)} (${Object.keys(cfg.pendingBots).length} chờ)`, inline: true },
       { name: 'Kênh log', value: cfg.logChannelId ? `<#${cfg.logChannelId}>` : '(chưa đặt, dùng /setup)', inline: true },
       { name: 'Webhook', value: maskWebhook(cfg.webhookUrl || process.env.RAID_WEBHOOK_URL), inline: true },
       { name: 'Tin cậy', value: `${cfg.trustedUserIds.length} người, ${cfg.trustedBotIds.length} bot`, inline: true },
@@ -58,6 +59,7 @@ function render(guild) {
       btn('lockdown', locked ? 'Mở khóa chat' : 'Khóa chat', locked ? ButtonStyle.Success : ButtonStyle.Danger),
       btn('autolock', `Tự khóa: ${onOff(cfg.raid.autoLockdown)}`, cfg.raid.autoLockdown ? ButtonStyle.Success : ButtonStyle.Secondary),
       btn('escalation', `Chống leo thang: ${onOff(cfg.escalation.enabled)}`, cfg.escalation.enabled ? ButtonStyle.Success : ButtonStyle.Secondary),
+      btn('botapproval', `Duyệt bot: ${onOff(cfg.botApproval.enabled)}`, cfg.botApproval.enabled ? ButtonStyle.Success : ButtonStyle.Secondary),
     ),
     new ActionRowBuilder().addComponents(
       btn('health', 'Kiểm tra quyền', ButtonStyle.Primary),
@@ -115,6 +117,10 @@ async function handle(interaction) {
       return interaction.update(render(guild));
     case 'escalation':
       cfg.escalation.enabled = !cfg.escalation.enabled;
+      await saveConfig();
+      return interaction.update(render(guild));
+    case 'botapproval':
+      cfg.botApproval.enabled = !cfg.botApproval.enabled;
       await saveConfig();
       return interaction.update(render(guild));
     case 'refresh':

@@ -11,7 +11,8 @@ Bot Discord bảo vệ server của bạn: chống raid, bot giả, spam và ph�
 | Chống raid | Đếm số người vào theo cửa sổ thời gian, đánh dấu tài khoản quá mới, timeout cả nhóm raid |
 | Tự phản ứng khi raid | Tự khóa gửi tin ở mọi kênh chat, tăng mức xác minh server, xóa tin nhắn của người vào lúc raid, tự mở khóa khi hết hạn (kể cả sau khi bot restart) |
 | Webhook raid | Cảnh báo raid, lockdown, anti-nuke gửi về webhook Discord |
-| Bot giả | Kick bot không do chủ server hoặc người tin cậy thêm; cảnh báo bot có tên gần giống bot/staff tin cậy |
+| Duyệt bot mới | Bot lạ vào server thì bị tạm gỡ quyền (chế độ act) và chủ server phải xác nhận **cho phép** (chấp nhận rủi ro) hoặc **từ chối** (kick). Không phản hồi trong 10 phút thì tự kick |
+| Bot giả | Cảnh báo bot có tên gần giống bot hoặc staff tin cậy |
 | Chống spam | Spam tốc độ, lặp nội dung, link mời, mention hàng loạt |
 | Anti-nuke | Xóa kênh/role hoặc ban hàng loạt: tự gỡ role người thực hiện |
 | Thứ bậc role (kiểu Wick) | Kiểm tra role của bot có ở trên cùng không, role nào nằm trên bot có quyền nguy hiểm (Administrator, Manage Roles…), thiếu quyền, role xác minh/kênh log lỗi. Tự kiểm tra khi bot khởi động, khi vào server mới và khi đổi thứ tự role |
@@ -31,6 +32,7 @@ Bot Discord bảo vệ server của bạn: chống raid, bot giả, spam và ph�
 | `/security accountage` | Manage Server | Tuổi tài khoản tối thiểu |
 | `/security logchannel` | Manage Server | Đặt kênh mod-log |
 | `/security webhook` / `webhook_test` | Manage Server | Đặt và thử webhook cảnh báo |
+| `/security botapproval` | Manage Server | Bật/tắt duyệt bot mới và chỉnh thời gian hết hạn |
 | `/security trust` | Manage Server | Thêm hoặc bỏ người/bot tin cậy |
 | `/health` | Manage Server | Kiểm tra thứ bậc role, quyền của bot và lỗi cấu hình |
 | `/security escalation` | Manage Server | Bật/tắt chống leo thang quyền và tự hoàn tác |
@@ -89,6 +91,7 @@ Một tin nhắn riêng tư với các nút, bấm là có tác dụng ngay và 
 | Điều khiển | Tác dụng |
 |---|---|
 | Chế độ: log/act | Chuyển giữa chỉ ghi log và xử lý thật |
+| Duyệt bot | Bật/tắt yêu cầu duyệt bot mới |
 | Khóa chat / Mở khóa chat | Lockdown thủ công, mở khóa khôi phục đúng quyền cũ |
 | Tự khóa | Bật/tắt tự lockdown khi phát hiện raid |
 | Chống leo thang | Bật/tắt chống cấp quyền nguy hiểm trái phép |
@@ -100,6 +103,19 @@ Một tin nhắn riêng tư với các nút, bấm là có tác dụng ngay và 
 
 Mỗi lần bấm bot kiểm tra lại quyền **Manage Server** của người bấm (và Manage Messages với nút xóa tin). Nếu bot khởi động lại, bảng cũ vẫn dùng được; chỉ cần bấm "Làm mới". Cấu hình chi tiết hơn (webhook, kênh log, tin cậy) vẫn dùng `/security`.
 
+## Duyệt bot mới
+
+Khi một bot không có trong danh sách tin cậy được thêm vào server bởi người khác chủ server và người tin cậy (hoặc không xác định được người thêm):
+
+1. Chế độ **act**: bot bảo vệ tạm gỡ toàn bộ quyền của bot mới (lưu quyền gốc). Chế độ **log**: chỉ hỏi, không hạn chế.
+2. Bot gửi yêu cầu vào kênh mod-log (nếu không có thì nhắn riêng chủ server) kèm tên bot, người thêm, quyền yêu cầu và quyền nguy hiểm.
+3. Chủ server hoặc người trong `/security trust` bấm:
+   - **Từ chối và kick**: bot bị kick.
+   - **Cho phép**: hiện cảnh báo lần cuối, bấm **Tôi hiểu rủi ro, cho phép** là **chấp nhận mọi hậu quả**: bot được khôi phục quyền gốc và vào danh sách tin cậy, từ đó không bị chặn hay giám sát bởi anti-nuke nữa.
+4. Không ai phản hồi sau thời gian đặt (mặc định 10 phút): chế độ act sẽ kick bot, chế độ log chỉ ghi nhận. Yêu cầu được lưu nên vẫn xử lý đúng sau khi bot khởi động lại.
+
+Bot do chủ server hoặc người tin cậy thêm vào được bỏ qua bước này. Tối đa 10 yêu cầu chờ cùng lúc để chống bị spam bot. Nếu không muốn dùng: `/security botapproval enabled:false`.
+
 ## Thứ bậc role và chống leo thang quyền
 
 - Discord chỉ cho bot xử lý (timeout, kick, gỡ role) những thành viên có role **thấp hơn** role cao nhất của bot. Vì vậy role bot nên nằm trên cùng. `/health` liệt kê các role đang nằm trên bot, nhất là role có quyền nguy hiểm.
@@ -110,6 +126,7 @@ Mỗi lần bấm bot kiểm tra lại quyền **Manage Server** của người 
 ## Giới hạn đã biết
 
 - Số thành viên mỗi role trong `/health` tính theo cache; server trên 1.500 thành viên có thể thiếu.
-- Phát hiện bot giả dựa vào audit log (có độ trễ nhỏ) nên có thể chậm vài giây.
+- Phát hiện người thêm bot dựa vào audit log (có độ trễ nhỏ). Nếu không xác định được, bot vẫn hỏi duyệt thay vì kick ngay.
+- Tạm gỡ quyền chỉ làm được khi role của bot mới nằm dưới role bot bảo vệ (một lý do nữa để đặt role bot bảo vệ trên cùng).
 - Bot chỉ khóa được kênh khi role của nó có Manage Channels và đứng trên các role liên quan.
 - `/purge messages` không xóa hàng loạt được tin quá 14 ngày (giới hạn của Discord).

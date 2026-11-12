@@ -5,6 +5,7 @@ const { sendModLog } = require('../utils/log');
 const { COLORS } = require('../utils/embed');
 const { recordJoin, startRaid, isRaidActive, markRaider } = require('../protection/raid');
 const { checkBotAdder, findImpersonation } = require('../protection/antiBot');
+const { requestApproval } = require('../protection/botApproval');
 
 async function quarantine(member, cfg, reason) {
   if (cfg.mode !== 'act') return 'Chỉ ghi log';
@@ -17,6 +18,9 @@ async function handleBot(member, cfg) {
   const { trusted, adderId, unknown } = await checkBotAdder(member, cfg);
   const lookalike = await findImpersonation(member, cfg);
   if (trusted && !lookalike) return;
+
+  // Bot lạ: hỏi chủ server có cho phép không (tạm gỡ quyền bot ở chế độ act) thay vì kick ngay
+  if (cfg.botApproval.enabled && !trusted) return requestApproval(member, cfg, { adderId, lookalike });
 
   let action = 'Chỉ ghi log';
   if (cfg.mode === 'act' && !trusted && !unknown) {

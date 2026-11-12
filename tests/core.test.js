@@ -145,3 +145,30 @@ test('panel: mặc định của config khớp mức Vừa, và mức càng cao 
 test('panel: giới hạn của Discord cho select menu (nhãn/mô tả tối đa 100 ký tự)', () => {
   for (const p of Object.values(PRESETS)) assert.ok(p.label.length <= 100);
 });
+
+// ---- duyệt bot mới ----
+const { buildId, parseId, isBotAppId } = require('../src/protection/botApprovalId');
+
+test('duyệt bot: customId tạo ra rồi đọc lại đúng, và dưới 100 ký tự', () => {
+  const id = buildId('confirm', '123456789012345678', '987654321098765432');
+  assert.ok(id.length <= 100);
+  assert.deepEqual(parseId(id), { action: 'confirm', guildId: '123456789012345678', botId: '987654321098765432' });
+  assert.equal(isBotAppId(id), true);
+});
+
+test('duyệt bot: từ chối customId sai hoặc bị giả mạo', () => {
+  assert.equal(parseId('panel:mode'), null);
+  assert.equal(parseId('botapp:hack:1:2'), null);
+  assert.equal(parseId('botapp:allow:abc:2'), null);
+  assert.equal(parseId('botapp:allow:1:2:3'), null);
+  assert.equal(parseId(undefined), null);
+});
+
+test('duyệt bot: mặc định bật, hết hạn 10 phút và không có yêu cầu chờ', () => {
+  const c = getConfig('approval-guild');
+  assert.equal(c.botApproval.enabled, true);
+  assert.equal(c.botApproval.timeoutMs, 600_000);
+  assert.deepEqual(c.pendingBots, {});
+  c.pendingBots['1'] = { botId: '1' };
+  assert.equal(getConfig('approval-guild-2').pendingBots['1'], undefined); // không dùng chung giữa các server
+});

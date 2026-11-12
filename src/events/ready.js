@@ -1,6 +1,7 @@
 'use strict';
 const { Events } = require('discord.js');
 const { sweep } = require('../protection/raid');
+const { expire } = require('../protection/botApproval');
 const { maybeWarnHealth } = require('../protection/hierarchy');
 
 module.exports = {
@@ -16,6 +17,7 @@ module.exports = {
       running = true;
       try {
         await sweep(client);
+        await expire(client);
       } catch (err) {
         console.error('Lỗi sweep:', err);
       } finally {

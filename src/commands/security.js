@@ -60,6 +60,13 @@ const data = new SlashCommandBuilder()
       .addBooleanOption((o) => o.setName('enabled').setDescription('Bật hoặc tắt'))
       .addBooleanOption((o) => o.setName('revert').setDescription('Tự hoàn tác ở chế độ act')),
   )
+  .addSubcommand((s) =>
+    s
+      .setName('botapproval')
+      .setDescription('Bot mới vào phải được chủ server duyệt')
+      .addBooleanOption((o) => o.setName('enabled').setDescription('Bật hoặc tắt'))
+      .addIntegerOption((o) => o.setName('timeout_minutes').setDescription('Hết hạn sau (phút)').setMinValue(1).setMaxValue(60)),
+  )
   .addSubcommand((s) => s.setName('webhook_test').setDescription('Gửi thử một cảnh báo qua webhook'))
   .addSubcommand((s) =>
     s
@@ -94,6 +101,7 @@ async function execute(interaction) {
             name: 'Raid',
             value: `${cfg.raid.maxJoins} người / ${cfg.raid.windowMs / 1000}s · auto lockdown ${yn(cfg.raid.autoLockdown)} (${Math.round(cfg.raid.lockdownMs / 60000)} phút) · xóa tin raider ${yn(cfg.raid.purgeRaiders)} · tăng xác minh ${yn(cfg.raid.raiseVerification)}`,
           },
+          { name: 'Duyệt bot mới', value: `${yn(cfg.botApproval.enabled)} (${Object.keys(cfg.pendingBots).length} chờ)`, inline: true },
           { name: 'Chống leo thang quyền', value: `${yn(cfg.escalation.enabled)}${cfg.escalation.revert ? ', tự hoàn tác' : ''}`, inline: true },
           { name: 'Tuổi tài khoản tối thiểu', value: `${Math.round(cfg.minAccountAgeMs / 86_400_000)} ngày`, inline: true },
           { name: 'Tin cậy', value: `${cfg.trustedUserIds.length} người, ${cfg.trustedBotIds.length} bot`, inline: true },
@@ -127,6 +135,13 @@ async function execute(interaction) {
       if (o.getBoolean('revert') != null) cfg.escalation.revert = o.getBoolean('revert');
       await saveConfig();
       return reply(`Chống leo thang quyền: ${yn(cfg.escalation.enabled)}, tự hoàn tác (chế độ act): ${yn(cfg.escalation.revert)}. Chỉ owner và người trong /security trust được phép cấp quyền nguy hiểm.`);
+    }
+    case 'botapproval': {
+      const o = interaction.options;
+      if (o.getBoolean('enabled') != null) cfg.botApproval.enabled = o.getBoolean('enabled');
+      if (o.getInteger('timeout_minutes') != null) cfg.botApproval.timeoutMs = o.getInteger('timeout_minutes') * 60_000;
+      await saveConfig();
+      return reply(`Duyệt bot mới: ${yn(cfg.botApproval.enabled)}, hết hạn sau ${Math.round(cfg.botApproval.timeoutMs / 60000)} phút. Bot do chủ server hoặc người tin cậy thêm vào được bỏ qua bước này.`);
     }
     case 'accountage': {
       cfg.minAccountAgeMs = interaction.options.getInteger('days', true) * 86_400_000;

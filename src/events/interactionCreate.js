@@ -4,6 +4,8 @@ const { getConfig } = require('../config');
 const { onCooldown } = require('../utils/cooldown');
 const { isRaidActive } = require('../protection/raid');
 const { handle: handlePanel, isPanelId } = require('../panel/controlPanel');
+const { handle: handleBotApproval } = require('../protection/botApproval');
+const { isBotAppId } = require('../protection/botApprovalId');
 
 const EPHEMERAL = MessageFlags.Ephemeral;
 
@@ -33,6 +35,8 @@ module.exports = {
   async execute(interaction) {
     try {
       if (interaction.isButton() && interaction.customId === 'verify') return await handleVerify(interaction);
+      // Duyệt bot mới (hoạt động cả khi nút nằm trong tin nhắn riêng với chủ server)
+      if (interaction.isButton() && isBotAppId(interaction.customId)) return await handleBotApproval(interaction);
       // Bảng điều khiển: nút và select menu có tiền tố "panel:"
       if ((interaction.isButton() || interaction.isStringSelectMenu()) && isPanelId(interaction.customId)) {
         return await handlePanel(interaction);
